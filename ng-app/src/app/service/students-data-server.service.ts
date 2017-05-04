@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {Student} from '../students/student';
-import {Http, Headers, Response, RequestOptions} from '@angular/http';
+import {Http, Headers, Response, RequestOptions, URLSearchParams} from '@angular/http';
 import {Observable} from "rxjs/Rx";
 import {AuthenticationService} from './authentication.service';
 
@@ -17,14 +17,15 @@ export class StudentsDataServerService {
 
   getStudentsData() {
     let studentArray: Student[];
-    return this.http.get('http://localhost:8080/student',({headers:this.headers}))
-      .map(res => res.json());
-
+    return this.http.get('http://localhost:8080/student', ({headers: this.headers}))
+      .map(res => res.json()).catch((error: any) => {
+        return Observable.throw(new Error('UnAuthorize'));
+      });
   }
 
   getStudent(id: number) {
     let student: Student;
-    return this.http.get('http://localhost:8080/student/' + id,({headers:this.headers}))
+    return this.http.get('http://localhost:8080/student/' + id, ({headers: this.headers}))
       .map((res: Response) => {
         if (res) {
           if (res.status === 200) {
@@ -68,14 +69,14 @@ export class StudentsDataServerService {
   //
   // }
 
-  addStudent(student: Student,file:any) {
+  addStudent(student: Student, file: any) {
     let formData = new FormData();
     let fileName: string;
 
     formData.append('file', file);
     let header = new Headers({'Authorization': 'Bearer ' + this.authenticationService.getToken()});
     let options = new RequestOptions({headers: header});
-    return this.http.post('http://localhost:8080/student/image', formData,options)
+    return this.http.post('http://localhost:8080/student/image', formData, options)
       .flatMap(filename => {
         student.image = filename.text();
         let headers = new Headers({'Content-Type': 'application/json',});
@@ -89,8 +90,15 @@ export class StudentsDataServerService {
             return Observable.throw(new Error(error.status))
           })
       })
+  }
 
-
-
+  findStudent(search: string) {
+    let student: Student;
+    let params: URLSearchParams = new URLSearchParams();
+    params.set('search', search);
+    return this.http.get('http://localhost:8080/students/', {
+      headers: this.headers, search: params
+    })
+      .map(res => res.json());
   }
 }

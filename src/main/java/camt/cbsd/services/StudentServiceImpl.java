@@ -22,7 +22,6 @@ import java.nio.file.Paths;
 import java.util.List;
 
 
-
 @Service
 @ConfigurationProperties(prefix = "server")
 public class StudentServiceImpl implements StudentService {
@@ -37,9 +36,9 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Transactional
-    public List<Student> getStudents(){
+    public List<Student> getStudents() {
         List<Student> students = studentDao.getStudents();
-        for(Student student:students){
+        for (Student student : students) {
             Hibernate.initialize(student.getEnrolledCourse());
         }
         return students;
@@ -61,13 +60,30 @@ public class StudentServiceImpl implements StudentService {
     @Override
     public Student addStudent(Student student, String imageFileName, BufferedImage image) throws IOException {
         // save file to the server
-        int newId = studentDao.size()+1;
-        String newFilename = newId +"."+ imageFileName;
-        File targetFile = Files.createFile(Paths.get(imageServerDir+newFilename)).toFile();
-        ImageIO.write(image,FilenameUtils.getExtension(imageFileName),targetFile);
+        int newId = studentDao.size() + 1;
+        String newFilename = newId + "." + imageFileName;
+        File targetFile = Files.createFile(Paths.get(imageServerDir + newFilename)).toFile();
+        ImageIO.write(image, FilenameUtils.getExtension(imageFileName), targetFile);
 
         student.setImage(newFilename);
         studentDao.addStudent(student);
         return student;
+    }
+
+    @Transactional
+    @Override
+    public Student getStudentForTransfer(String username) {
+        Student student = studentDao.findByUsername(username);
+        Hibernate.initialize(student.getUser());
+        Hibernate.initialize(student.getAuthorities());
+        return student;
+    }
+
+    @Override
+    @Transactional
+    public List<Student> queryStudent(String query) {
+        if (query == null || query.equals(""))
+            return studentDao.getStudents();
+        return studentDao.getStudents(query);
     }
 }

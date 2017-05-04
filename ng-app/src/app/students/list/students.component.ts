@@ -10,14 +10,19 @@ import {Router} from "@angular/router";
   styleUrls: ['./students.component.css']
 })
 export class StudentsComponent {
+  search: string;
   students: Student[];
 
-  constructor(private studentDataService: StudentsDataService, private router: Router ) {
+  constructor(private studentDataService: StudentsDataService, private router: Router) {
   }
 
   ngOnInit() {
     this.studentDataService.getStudentsData()
-      .subscribe(students => this.students = students);
+      .subscribe(students => this.students = students, (error: Error) => {
+        if (error.message === 'UnAuthorize') {
+          this.router.navigate(['login'], {queryParams: {source: 'student'}});
+        }
+      });
   }
 
 
@@ -43,7 +48,17 @@ export class StudentsComponent {
       student.penAmount--;
   }
 
-  showDetail(student: Student){
-    this.router.navigate(['/detail',student.id]);
+  showDetail(student: Student) {
+    this.router.navigate(['/detail', student.id]);
+  }
+
+  onSearch() {
+    this.studentDataService.findStudent(this.search)
+      .subscribe(students => this.students = students,
+        (error: Error) => {
+          if (error.message === 'UnAuthorize') {
+            this.router.navigate(['login'], {queryParams: {source: 'student'}});
+          }
+        });
   }
 }
